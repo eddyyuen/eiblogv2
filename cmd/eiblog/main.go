@@ -2,9 +2,8 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"path/filepath"
-
 	"github.com/eiblog/eiblog/pkg/config"
 	"github.com/eiblog/eiblog/pkg/core/eiblog"
 	"github.com/eiblog/eiblog/pkg/core/eiblog/admin"
@@ -12,12 +11,26 @@ import (
 	"github.com/eiblog/eiblog/pkg/core/eiblog/page"
 	"github.com/eiblog/eiblog/pkg/core/eiblog/swag"
 	"github.com/eiblog/eiblog/pkg/mid"
-
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+	"github.com/zh-five/xdaemon"
+	"path/filepath"
 )
 
 func main() {
-	fmt.Println("Hi, it's App " + config.Conf.EiBlogApp.Name)
+	d := flag.Bool("d", false, "run in background")
+	logFile := flag.String("l", "eiblog.log", "log path")
+	flag.Parse()
+
+	if *d {
+		_, err := xdaemon.Background(*logFile, true)
+		if err != nil {
+			fmt.Println(err)
+		}
+		return
+	}
+
+	logrus.Info("EiBlog start, app name " + config.Conf.EiBlogApp.Name)
 
 	endRun := make(chan error, 1)
 
