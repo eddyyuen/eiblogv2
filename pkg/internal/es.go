@@ -37,7 +37,7 @@ func init() {
 	mappings := fmt.Sprintf(`{"mappings":{"%s":{"properties":{"content":{"analyzer":"ik_syno","search_analyzer":"ik_syno","term_vector":"with_positions_offsets","type":"string"},"date":{"index":"not_analyzed","type":"date"},"slug":{"type":"string"},"tag":{"index":"not_analyzed","type":"string"},"title":{"analyzer":"ik_syno","search_analyzer":"ik_syno","term_vector":"with_positions_offsets","type":"string"}}}}}`, "article")
 	err := createIndexAndMappings(ElasticIndex, ElasticType, []byte(mappings))
 	if err != nil {
-		panic(err)
+		logrus.Error(err)
 	}
 }
 
