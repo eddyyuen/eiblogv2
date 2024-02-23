@@ -74,7 +74,7 @@ func backupFromMongoDB(now time.Time) error {
 	if err != nil {
 		return err
 	}
-	uploadParams := internal.UploadParams{
+	uploadParams := internal.QiniuUploadParams{
 		Name:           filepath.Join("blog", name), // blog/eiblog-xx.tar.gz
 		Size:           s.Size(),
 		Data:           f,
@@ -87,7 +87,7 @@ func backupFromMongoDB(now time.Time) error {
 		return err
 	}
 	// after days delete
-	deleteParams := internal.DeleteParams{
+	deleteParams := internal.QiniuDeleteParams{
 		Name:           name,
 		Days:           config.Conf.BackupApp.Validity,
 		NoCompletePath: true,
@@ -99,7 +99,7 @@ func backupFromMongoDB(now time.Time) error {
 
 func restoreToMongoDB() error {
 	// backup file
-	params := internal.ContentParams{
+	params := internal.QiniuContentParams{
 		Prefix: "blog/",
 
 		Conf: config.Conf.BackupApp.Qiniu,
