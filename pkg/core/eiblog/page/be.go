@@ -22,8 +22,8 @@ import (
 // baseBEParams 基础参数
 func baseBEParams(c *gin.Context) gin.H {
 	return gin.H{
-		"Author": cache.Ei.Account.Username,
-		"Qiniu":  config.Conf.EiBlogApp.Qiniu,
+		"Author":     cache.Ei.Account.Username,
+		"StaticFile": config.Conf.EiBlogApp.StaticFile,
 	}
 }
 

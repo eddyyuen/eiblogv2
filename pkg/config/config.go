@@ -2,7 +2,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -75,9 +74,22 @@ type Google struct {
 // Qiniu oss
 type Qiniu struct {
 	Bucket    string `yaml:"bucket"`
-	Domain    string `yaml:"domain"`
 	AccessKey string `yaml:"accesskey"`
 	SecretKey string `yaml:"secretkey"`
+}
+
+// Local Storage
+type LocalStor struct {
+	LocalPath string `yaml:"path"`
+}
+
+// StaticFile manager
+type StaticFile struct {
+	Type string `yaml:"type"`
+
+	Domain    string    `yaml:"domain"`
+	LocalStor LocalStor `yaml:"local"`
+	Qiniu     Qiniu     `yaml:"qiniu"`
 }
 
 // FeedRPC feedr
@@ -108,16 +120,16 @@ type Blogger struct {
 type EiBlogApp struct {
 	Mode
 
-	StaticVersion int      `yaml:"staticversion"`
-	HotWords      []string `yaml:"hotwords"`
-	General       General  `yaml:"general"`
-	Disqus        Disqus   `yaml:"disqus"`
-	Google        Google   `yaml:"google"`
-	Qiniu         Qiniu    `yaml:"qiniu"`
-	Twitter       Twitter  `yaml:"twitter"`
-	FeedRPC       FeedRPC  `yaml:"feedrpc"`
-	Account       Account  `yaml:"account"`
-	Blogger       Blogger  `yaml:"blogger"`
+	StaticVersion int        `yaml:"staticversion"`
+	HotWords      []string   `yaml:"hotwords"`
+	General       General    `yaml:"general"`
+	Disqus        Disqus     `yaml:"disqus"`
+	Google        Google     `yaml:"google"`
+	StaticFile    StaticFile `yaml:"static"`
+	Twitter       Twitter    `yaml:"twitter"`
+	FeedRPC       FeedRPC    `yaml:"feedrpc"`
+	Account       Account    `yaml:"account"`
+	Blogger       Blogger    `yaml:"blogger"`
 }
 
 // BackupApp config
@@ -147,7 +159,7 @@ func init() {
 	WorkDir = workDir()
 	path := filepath.Join(WorkDir, "conf", "app.yml")
 
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}

@@ -46,8 +46,8 @@ func RegisterRoutesAuthz(group gin.IRoutes) {
 	group.POST("/api/draft-delete", handleDraftDelete)
 	group.POST("/api/trash-delete", handleAPITrashDelete)
 	group.POST("/api/trash-recover", handleAPITrashRecover)
-	group.POST("/api/file-upload", handleAPIQiniuUpload)
-	group.POST("/api/file-delete", handleAPIQiniuDelete)
+	group.POST("/api/file-upload", handleAPIUpload)
+	group.POST("/api/file-delete", handleAPIDelete)
 }
 
 // handleAcctLogin 登录接口
@@ -71,10 +71,13 @@ func handleAcctLogin(c *gin.Context) {
 
 	cache.Ei.Account.LoginIP = c.ClientIP()
 	cache.Ei.Account.LoginAt = time.Now()
-	cache.Ei.UpdateAccount(context.Background(), user, map[string]interface{}{
+	err := cache.Ei.UpdateAccount(context.Background(), user, map[string]interface{}{
 		"login_ip": cache.Ei.Account.LoginIP,
 		"login_at": cache.Ei.Account.LoginAt,
 	})
+	if err != nil {
+		logrus.Error("handleAcctLogin.UpdateAccount error:", err)
+	}
 	c.Redirect(http.StatusFound, "/admin/profile")
 }
 
@@ -290,11 +293,17 @@ func handleAPIPostCreate(c *gin.Context) {
 			// 异步执行，快
 			go func() {
 				// elastic
-				internal.ElasticAddIndex(article)
+				err := internal.ElasticAddIndex(article)
+				if err != nil {
+					logrus.Error("handleAPIPostCreate.ElasticAddIndex error", err)
+				}
 				// rss
 				internal.PingFunc(cache.Ei.Blogger.BTitle, slug)
 				// disqus
-				internal.ThreadCreate(article, cache.Ei.Blogger.BTitle)
+				err = internal.ThreadCreate(article, cache.Ei.Blogger.BTitle)
+				if err != nil {
+					logrus.Error("handleAPIPostCreate.ThreadCreate error", err)
+				}
 			}()
 		}
 		return
@@ -329,12 +338,18 @@ func handleAPIPostCreate(c *gin.Context) {
 		// 异步执行，快
 		go func() {
 			// elastic
-			internal.ElasticAddIndex(article)
+			err := internal.ElasticAddIndex(article)
+			if err != nil {
+				logrus.Error("handleAPIPostCreate.RepArticle.ElasticAddIndex error", err)
+			}
 			// rss
 			internal.PingFunc(cache.Ei.Blogger.BTitle, slug)
 			// disqus
 			if artc == nil {
-				internal.ThreadCreate(article, cache.Ei.Blogger.BTitle)
+				err := internal.ThreadCreate(article, cache.Ei.Blogger.BTitle)
+				if err != nil {
+					logrus.Error("handleAPIPostCreate.RepArticle.ThreadCreate error", err)
+				}
 			}
 		}()
 	}
@@ -453,66 +468,159 @@ func handleAPITrashRecover(c *gin.Context) {
 	responseNotice(c, NoticeSuccess, "恢复成功", "")
 }
 
+// handleAPIUpload 上传文件
+func handleAPIUpload(c *gin.Context) {
+	conf := config.Conf.EiBlogApp.StaticFile
+	switch conf.Type {
+	case "qiniu":
+		c.JSON(handleAPIQiniuUpload(c))
+	case "file":
+		c.JSON(handleAPIFileUpload(c))
+	default:
+		c.JSON(http.StatusBadRequest, errors.ErrUnsupported)
+	}
+	return
+}
+
+// handleAPIDelete 删除文件
+func handleAPIDelete(c *gin.Context) {
+	conf := config.Conf.EiBlogApp.StaticFile
+	switch conf.Type {
+	case "qiniu":
+		c.JSON(handleAPIQiniuDelete(c))
+	case "file":
+		c.JSON(handleAPIFileDelete(c))
+	default:
+		c.JSON(http.StatusBadRequest, errors.ErrUnsupported)
+	}
+	return
+}
+
+// handleAPIFileUpload 上传文件
+func handleAPIFileUpload(c *gin.Context) (int, any) {
+	type Size interface {
+		Size() int64
+	}
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		logrus.Error("handleAPIFileUpload.FormFile: ", err)
+		return http.StatusBadRequest, err.Error()
+
+	}
+	s, ok := file.(Size)
+	if !ok {
+		logrus.Error("assert failed")
+		return http.StatusBadRequest, "false"
+
+	}
+	filename := strings.ToLower(header.Filename)
+
+	params := internal.FileUploadParams{
+		Name: filename,
+		Size: s.Size(),
+		Data: file,
+
+		RootConf: config.Conf.EiBlogApp.StaticFile,
+		Conf:     config.Conf.EiBlogApp.StaticFile.LocalStor,
+	}
+	url, err := internal.LocalUpload(params)
+	if err != nil {
+		logrus.Error("handleAPIFileUpload.LocalUpload: ", err)
+		return http.StatusBadRequest, err.Error()
+
+	}
+	logrus.Info("upload:", url)
+	typ := header.Header.Get("Content-Type")
+	return http.StatusOK, gin.H{
+		"title":   filename,
+		"isImage": typ[:5] == "image",
+		"url":     url,
+		"bytes":   fmt.Sprintf("%dkb", s.Size()/1000),
+	}
+}
+
+// handleAPIFileDelete 删除文件
+func handleAPIFileDelete(c *gin.Context) (int, any) {
+	name := c.PostForm("title")
+	if name == "" {
+		logrus.Error("handleAPIFileDelete.PostForm: 参数错误")
+		return http.StatusBadRequest, "参数错误"
+	}
+
+	params := internal.FileDeleteParams{
+		Name: name,
+
+		Conf: config.Conf.EiBlogApp.StaticFile.LocalStor,
+	}
+	err := internal.LocalDelete(params)
+	if err != nil {
+		logrus.Error("handleAPIFileDelete.LocalDelete: ", err)
+	}
+
+	return http.StatusOK, "删掉了吗？鬼知道。。。"
+}
+
 // handleAPIQiniuUpload 上传文件
-func handleAPIQiniuUpload(c *gin.Context) {
+func handleAPIQiniuUpload(c *gin.Context) (int, any) {
 	type Size interface {
 		Size() int64
 	}
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		logrus.Error("handleAPIQiniuUpload.FormFile: ", err)
-		c.String(http.StatusBadRequest, err.Error())
-		return
+		return http.StatusBadRequest, err.Error()
+
 	}
 	s, ok := file.(Size)
 	if !ok {
 		logrus.Error("assert failed")
-		c.String(http.StatusBadRequest, "false")
-		return
+		return http.StatusBadRequest, "false"
+
 	}
 	filename := strings.ToLower(header.Filename)
 
-	params := internal.UploadParams{
+	params := internal.QiniuUploadParams{
 		Name: filename,
 		Size: s.Size(),
 		Data: file,
 
-		Conf: config.Conf.EiBlogApp.Qiniu,
+		RootConf: config.Conf.EiBlogApp.StaticFile,
+		Conf:     config.Conf.EiBlogApp.StaticFile.Qiniu,
 	}
 	url, err := internal.QiniuUpload(params)
 	if err != nil {
 		logrus.Error("handleAPIQiniuUpload.QiniuUpload: ", err)
-		c.String(http.StatusBadRequest, err.Error())
-		return
+		return http.StatusBadRequest, err.Error()
+
 	}
 	typ := header.Header.Get("Content-Type")
-	c.JSON(http.StatusOK, gin.H{
+	return http.StatusOK, gin.H{
 		"title":   filename,
 		"isImage": typ[:5] == "image",
 		"url":     url,
 		"bytes":   fmt.Sprintf("%dkb", s.Size()/1000),
-	})
+	}
 }
 
 // handleAPIQiniuDelete 删除文件
-func handleAPIQiniuDelete(c *gin.Context) {
-	defer c.String(http.StatusOK, "删掉了吗？鬼知道。。。")
-
+func handleAPIQiniuDelete(c *gin.Context) (int, any) {
 	name := c.PostForm("title")
 	if name == "" {
 		logrus.Error("handleAPIQiniuDelete.PostForm: 参数错误")
-		return
+		return http.StatusBadRequest, errors.New("参数错误")
 	}
 
-	params := internal.DeleteParams{
+	params := internal.QiniuDeleteParams{
 		Name: name,
 
-		Conf: config.Conf.EiBlogApp.Qiniu,
+		Conf: config.Conf.EiBlogApp.StaticFile.Qiniu,
 	}
 	err := internal.QiniuDelete(params)
 	if err != nil {
 		logrus.Error("handleAPIQiniuDelete.QiniuDelete: ", err)
 	}
+
+	return http.StatusOK, "删掉了吗？鬼知道。。。"
 }
 
 // parseLocationDate 解析日期

@@ -24,25 +24,20 @@ import (
 
 // baseFEParams 基础参数
 func baseFEParams(c *gin.Context) gin.H {
-	version := 0
+	version := config.Conf.EiBlogApp.StaticVersion
 
-	cookie, err := c.Request.Cookie("v")
-	if err != nil || cookie.Value !=
-		fmt.Sprint(config.Conf.EiBlogApp.StaticVersion) {
-		version = config.Conf.EiBlogApp.StaticVersion
-	}
 	return gin.H{
-		"BlogName": cache.Ei.Blogger.BlogName,
-		"SubTitle": cache.Ei.Blogger.SubTitle,
-		"BTitle":   cache.Ei.Blogger.BTitle,
-		"BeiAn":    cache.Ei.Blogger.BeiAn,
-		"Domain":   config.Conf.EiBlogApp.Host,
-		"CopyYear": time.Now().Year(),
-		"Twitter":  config.Conf.EiBlogApp.Twitter,
-		"Qiniu":    config.Conf.EiBlogApp.Qiniu,
-		"Disqus":   config.Conf.EiBlogApp.Disqus,
-		"AdSense":  config.Conf.EiBlogApp.Google.AdSense,
-		"Version":  version,
+		"BlogName":   cache.Ei.Blogger.BlogName,
+		"SubTitle":   cache.Ei.Blogger.SubTitle,
+		"BTitle":     cache.Ei.Blogger.BTitle,
+		"BeiAn":      cache.Ei.Blogger.BeiAn,
+		"Domain":     config.Conf.EiBlogApp.Host,
+		"CopyYear":   time.Now().Year(),
+		"Twitter":    config.Conf.EiBlogApp.Twitter,
+		"StaticFile": config.Conf.EiBlogApp.StaticFile,
+		"Disqus":     config.Conf.EiBlogApp.Disqus,
+		"AdSense":    config.Conf.EiBlogApp.Google.AdSense,
+		"Version":    version,
 	}
 }
 

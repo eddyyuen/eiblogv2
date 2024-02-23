@@ -15,18 +15,19 @@ import (
 	"github.com/qiniu/go-sdk/v7/storage"
 )
 
-// UploadParams upload params
-type UploadParams struct {
+// QiniuUploadParams upload params
+type QiniuUploadParams struct {
 	Name           string
 	Size           int64
 	Data           io.Reader
 	NoCompletePath bool
 
-	Conf config.Qiniu
+	RootConf config.StaticFile
+	Conf     config.Qiniu
 }
 
 // QiniuUpload 上传文件
-func QiniuUpload(params UploadParams) (string, error) {
+func QiniuUpload(params QiniuUploadParams) (string, error) {
 	if params.Conf.AccessKey == "" ||
 		params.Conf.SecretKey == "" {
 		return "", errors.New("qiniu config error")
@@ -65,12 +66,12 @@ func QiniuUpload(params UploadParams) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	url := "https://" + params.Conf.Domain + "/" + key
+	url := "https://" + params.RootConf.Domain + "/" + key
 	return url, nil
 }
 
 // DeleteParams delete params
-type DeleteParams struct {
+type QiniuDeleteParams struct {
 	Name           string
 	Days           int
 	NoCompletePath bool
@@ -79,7 +80,7 @@ type DeleteParams struct {
 }
 
 // QiniuDelete 删除文件
-func QiniuDelete(params DeleteParams) error {
+func QiniuDelete(params QiniuDeleteParams) error {
 	key := params.Name
 	if !params.NoCompletePath {
 		key = completeQiniuKey(params.Name)
@@ -106,14 +107,15 @@ func QiniuDelete(params DeleteParams) error {
 }
 
 // ContentParams list params
-type ContentParams struct {
+type QiniuContentParams struct {
 	Prefix string
 
-	Conf config.Qiniu
+	RootConf config.StaticFile
+	Conf     config.Qiniu
 }
 
 // QiniuContent 获取文件列表
-func QiniuContent(params ContentParams) ([]byte, error) {
+func QiniuContent(params QiniuContentParams) ([]byte, error) {
 	mac := qbox.NewMac(params.Conf.AccessKey,
 		params.Conf.SecretKey)
 	// region
@@ -136,7 +138,7 @@ func QiniuContent(params ContentParams) ([]byte, error) {
 		return nil, errors.New("no file")
 	}
 	deadline := time.Now().Add(time.Second * 60).Unix()
-	url := storage.MakePrivateURLv2(mac, "https://"+params.Conf.Domain, files[0].Key, deadline)
+	url := storage.MakePrivateURLv2(mac, "https://"+params.RootConf.Domain, files[0].Key, deadline)
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err

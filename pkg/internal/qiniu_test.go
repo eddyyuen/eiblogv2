@@ -15,7 +15,7 @@ func TestQiniuUpload(t *testing.T) {
 	fi, _ := f.Stat()
 
 	type args struct {
-		params UploadParams
+		params QiniuUploadParams
 	}
 	tests := []struct {
 		name    string
@@ -23,15 +23,18 @@ func TestQiniuUpload(t *testing.T) {
 		wantErr bool
 	}{
 		// TODO: Add test cases.
-		{"1", args{params: UploadParams{
+		{"1", args{params: QiniuUploadParams{
 			Name: "test-" + time.Now().Format("200601021504059999") + ".go",
 			Size: fi.Size(),
 			Data: f,
+			RootConf: config.StaticFile{
+				Type:   "qiniu",
+				Domain: "bu.st.deepzz.com",
+			},
 			Conf: config.Qiniu{
 				AccessKey: os.Getenv("QINIU_ACCESSKEY"),
 				SecretKey: os.Getenv("QINIU_SECRETKEY"),
 				Bucket:    os.Getenv("QINIU_BUCKET"),
-				Domain:    "bu.st.deepzz.com",
 			},
 		}}, false},
 	}
@@ -48,12 +51,15 @@ func TestQiniuUpload(t *testing.T) {
 }
 
 func TestQiniuContent(t *testing.T) {
-	params := ContentParams{
+	params := QiniuContentParams{
+		RootConf: config.StaticFile{
+			Type:   "qiniu",
+			Domain: "bu.st.deepzz.com",
+		},
 		Conf: config.Qiniu{
 			AccessKey: os.Getenv("QINIU_ACCESSKEY"),
 			SecretKey: os.Getenv("QINIU_SECRETKEY"),
 			Bucket:    os.Getenv("QINIU_BUCKET"),
-			Domain:    "bu.st.deepzz.com",
 		},
 	}
 	_, err := QiniuContent(params)
