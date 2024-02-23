@@ -1,4 +1,4 @@
-// +build !prod
+//go:build !prod
 
 // Package config provides ...
 package config
