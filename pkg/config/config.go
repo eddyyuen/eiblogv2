@@ -168,8 +168,8 @@ func init() {
 		panic(err)
 	}
 	// read run mode from env
-	Conf.RunMode = ModeDev
-	if runmode := os.Getenv("RUN_MODE"); runmode == ModeProd {
+	runmode := os.Getenv("RUN_MODE")
+	if runmode == ModeProd || runmode == ModeDev {
 		Conf.RunMode = runmode
 	}
 	// read env
