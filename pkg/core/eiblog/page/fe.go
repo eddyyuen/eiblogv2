@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 	htemplate "html/template"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -23,7 +23,7 @@ import (
 )
 
 // baseFEParams 基础参数
-func baseFEParams(c *gin.Context) gin.H {
+func baseFEParams() gin.H {
 	version := config.Conf.EiBlogApp.StaticVersion
 
 	return gin.H{
@@ -43,7 +43,7 @@ func baseFEParams(c *gin.Context) gin.H {
 
 // handleNotFound not found page
 func handleNotFound(c *gin.Context) {
-	params := baseFEParams(c)
+	params := baseFEParams()
 	params["Title"] = "Not Found"
 	params["Description"] = "404 Not Found"
 	params["Path"] = ""
@@ -53,7 +53,7 @@ func handleNotFound(c *gin.Context) {
 
 // handleHomePage 首页
 func handleHomePage(c *gin.Context) {
-	params := baseFEParams(c)
+	params := baseFEParams()
 	params["Title"] = cache.Ei.Blogger.BTitle + " | " + cache.Ei.Blogger.SubTitle
 	params["Description"] = "博客首页，" + cache.Ei.Blogger.SubTitle
 	params["Path"] = c.Request.URL.Path
@@ -76,7 +76,7 @@ func handleArticlePage(c *gin.Context) {
 		return
 	}
 	article := cache.Ei.ArticlesMap[slug[:len(slug)-5]]
-	params := baseFEParams(c)
+	params := baseFEParams()
 	params["Title"] = article.Title + " | " + cache.Ei.Blogger.BTitle
 	params["Path"] = c.Request.URL.Path
 	params["CurrentPage"] = "post-" + article.Slug
@@ -112,7 +112,7 @@ func handleArticlePage(c *gin.Context) {
 
 // handleSeriesPage 专题页
 func handleSeriesPage(c *gin.Context) {
-	params := baseFEParams(c)
+	params := baseFEParams()
 	params["Title"] = "专题 | " + cache.Ei.Blogger.BTitle
 	params["Description"] = "专题列表，" + cache.Ei.Blogger.SubTitle
 	params["Path"] = c.Request.URL.Path
@@ -123,7 +123,7 @@ func handleSeriesPage(c *gin.Context) {
 
 // handleArchivePage 归档页
 func handleArchivePage(c *gin.Context) {
-	params := baseFEParams(c)
+	params := baseFEParams()
 	params["Title"] = "归档 | " + cache.Ei.Blogger.BTitle
 	params["Description"] = "博客归档，" + cache.Ei.Blogger.SubTitle
 	params["Path"] = c.Request.URL.Path
@@ -134,7 +134,7 @@ func handleArchivePage(c *gin.Context) {
 
 // handleSearchPage 搜索页
 func handleSearchPage(c *gin.Context) {
-	params := baseFEParams(c)
+	params := baseFEParams()
 	params["Title"] = "站内搜索 | " + cache.Ei.Blogger.BTitle
 	params["Description"] = "站内搜索，" + cache.Ei.Blogger.SubTitle
 	params["Path"] = ""
@@ -234,10 +234,16 @@ func handleDisqusList(c *gin.Context) {
 		} else if internal.ThreadDetails(artc) == nil {
 			dcs.Data.Thread = artc.Thread
 		}
-		cache.Ei.UpdateArticle(context.Background(), artc.ID,
+		err := cache.Ei.UpdateArticle(context.Background(), artc.ID,
 			map[string]interface{}{
 				"thread": artc.Thread,
 			})
+		if err != nil {
+			logrus.Error("hadnleDisqusList.UpdateArticle: ", err)
+			dcs.ErrNo = 0
+			dcs.ErrMsg = "系统错误"
+			return
+		}
 	}
 }
 
@@ -364,8 +370,14 @@ func handleBeaconPage(c *gin.Context) {
 			logrus.Error("HandleBeaconPage.Do: ", err)
 			return
 		}
-		defer res.Body.Close()
-		data, err := ioutil.ReadAll(res.Body)
+		defer func(Body io.ReadCloser) {
+			err := Body.Close()
+			if err != nil {
+				logrus.Error("HandleBeaconPage.Body.Close: ", err)
+				return
+			}
+		}(res.Body)
+		data, err := io.ReadAll(res.Body)
 		if err != nil {
 			logrus.Error("HandleBeaconPage.ReadAll: ", err)
 			return

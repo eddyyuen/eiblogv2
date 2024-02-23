@@ -20,7 +20,7 @@ import (
 )
 
 // baseBEParams 基础参数
-func baseBEParams(c *gin.Context) gin.H {
+func baseBEParams() gin.H {
 	return gin.H{
 		"Author":     cache.Ei.Account.Username,
 		"StaticFile": config.Conf.EiBlogApp.StaticFile,
@@ -42,7 +42,7 @@ func handleLoginPage(c *gin.Context) {
 
 // handleAdminProfile 个人配置
 func handleAdminProfile(c *gin.Context) {
-	params := baseBEParams(c)
+	params := baseBEParams()
 	params["Title"] = "个人配置 | " + cache.Ei.Blogger.BTitle
 	params["Path"] = c.Request.URL.Path
 	params["Console"] = true
@@ -58,7 +58,7 @@ type T struct {
 
 // handleAdminPost 写文章页
 func handleAdminPost(c *gin.Context) {
-	params := baseBEParams(c)
+	params := baseBEParams()
 	id, err := strconv.Atoi(c.Query("cid"))
 	if err == nil && id > 0 {
 		article, _ := cache.Ei.LoadArticle(context.Background(), id)
@@ -96,17 +96,17 @@ func handleAdminPosts(c *gin.Context) {
 	}
 	vals := c.Request.URL.Query()
 
-	params := baseBEParams(c)
+	params := baseBEParams()
 	params["Title"] = "文章管理 | " + cache.Ei.Blogger.BTitle
 	params["Manage"] = true
 	params["Path"] = c.Request.URL.Path
 	params["Series"] = cache.Ei.Series
 	params["Serie"] = se
 	params["KW"] = kw
-	var max int
-	params["List"], max = cache.Ei.PageArticleBE(se, kw, false, false,
+	var maxi int
+	params["List"], maxi = cache.Ei.PageArticleBE(se, kw, false, false,
 		pg, config.Conf.EiBlogApp.General.PageSize)
-	if pg < max {
+	if pg < maxi {
 		vals.Set("page", fmt.Sprint(pg+1))
 		params["Next"] = vals.Encode()
 	}
@@ -114,8 +114,8 @@ func handleAdminPosts(c *gin.Context) {
 		vals.Set("page", fmt.Sprint(pg-1))
 		params["Prev"] = vals.Encode()
 	}
-	params["PP"] = make(map[int]string, max)
-	for i := 0; i < max; i++ {
+	params["PP"] = make(map[int]string, maxi)
+	for i := 0; i < maxi; i++ {
 		vals.Set("page", fmt.Sprint(i+1))
 		params["PP"].(map[int]string)[i+1] = vals.Encode()
 	}
@@ -125,7 +125,7 @@ func handleAdminPosts(c *gin.Context) {
 
 // handleAdminSeries 专题列表
 func handleAdminSeries(c *gin.Context) {
-	params := baseBEParams(c)
+	params := baseBEParams()
 	params["Title"] = "专题管理 | " + cache.Ei.Blogger.BTitle
 	params["Manage"] = true
 	params["Path"] = c.Request.URL.Path
@@ -135,7 +135,7 @@ func handleAdminSeries(c *gin.Context) {
 
 // handleAdminSerie 编辑专题
 func handleAdminSerie(c *gin.Context) {
-	params := baseBEParams(c)
+	params := baseBEParams()
 
 	id, err := strconv.Atoi(c.Query("mid"))
 	params["Title"] = "新增专题 | " + cache.Ei.Blogger.BTitle
@@ -155,7 +155,7 @@ func handleAdminSerie(c *gin.Context) {
 
 // handleAdminTags 标签列表
 func handleAdminTags(c *gin.Context) {
-	params := baseBEParams(c)
+	params := baseBEParams()
 	params["Title"] = "标签管理 | " + cache.Ei.Blogger.BTitle
 	params["Manage"] = true
 	params["Path"] = c.Request.URL.Path
@@ -180,7 +180,7 @@ func handleDraftDelete(c *gin.Context) {
 
 // handleAdminDraft 草稿箱页
 func handleAdminDraft(c *gin.Context) {
-	params := baseBEParams(c)
+	params := baseBEParams()
 
 	params["Title"] = "草稿箱 | " + cache.Ei.Blogger.BTitle
 	params["Manage"] = true
@@ -203,7 +203,7 @@ func handleAdminDraft(c *gin.Context) {
 
 // handleAdminTrash 回收箱页
 func handleAdminTrash(c *gin.Context) {
-	params := baseBEParams(c)
+	params := baseBEParams()
 	params["Title"] = "回收箱 | " + cache.Ei.Blogger.BTitle
 	params["Manage"] = true
 	params["Path"] = c.Request.URL.Path
@@ -222,7 +222,7 @@ func handleAdminTrash(c *gin.Context) {
 
 // handleAdminGeneral 基本设置
 func handleAdminGeneral(c *gin.Context) {
-	params := baseBEParams(c)
+	params := baseBEParams()
 	params["Title"] = "基本设置 | " + cache.Ei.Blogger.BTitle
 	params["Setting"] = true
 	params["Path"] = c.Request.URL.Path
@@ -231,7 +231,7 @@ func handleAdminGeneral(c *gin.Context) {
 
 // handleAdminDiscussion 阅读设置
 func handleAdminDiscussion(c *gin.Context) {
-	params := baseBEParams(c)
+	params := baseBEParams()
 	params["Title"] = "阅读设置 | " + cache.Ei.Blogger.BTitle
 	params["Setting"] = true
 	params["Path"] = c.Request.URL.Path

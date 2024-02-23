@@ -143,7 +143,12 @@ func QiniuContent(params QiniuContentParams) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			return
+		}
+	}(resp.Body)
 
 	return io.ReadAll(resp.Body)
 }

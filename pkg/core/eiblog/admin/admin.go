@@ -124,7 +124,7 @@ func handleAPIAccount(c *gin.Context) {
 	ad := c.PostForm("address")
 	if (e != "" && !tools.ValidateEmail(e)) || (pn != "" &&
 		!tools.ValidatePhoneNo(pn)) {
-		responseNotice(c, NoticeNotice, "参数错误", "")
+		responseNotice(c, NoticeError, "参数错误", "")
 		return
 	}
 
@@ -182,7 +182,7 @@ func handleDraftDelete(c *gin.Context) {
 	for _, v := range c.PostFormArray("mid[]") {
 		id, err := strconv.Atoi(v)
 		if err != nil || id < 1 {
-			responseNotice(c, NoticeNotice, "参数错误", "")
+			responseNotice(c, NoticeError, "参数错误", "")
 			return
 		}
 		err = cache.Ei.RemoveArticle(context.Background(), id)
