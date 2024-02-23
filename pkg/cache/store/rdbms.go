@@ -8,10 +8,10 @@ import (
 
 	"github.com/eiblog/eiblog/pkg/model"
 
+	"github.com/glebarez/sqlite"
 	"gorm.io/driver/clickhouse"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlite"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 )
@@ -51,7 +51,7 @@ func (db *rdbms) Init(name, source string) (Store, error) {
 		// https://github.com/go-gorm/postgres
 		gormDB, err = gorm.Open(postgres.Open(source), &gorm.Config{})
 	case "sqlite":
-		// github.com/mattn/go-sqlite3
+		// github.com/glebarez/sqlite
 		gormDB, err = gorm.Open(sqlite.Open(source), &gorm.Config{})
 	case "sqlserver":
 		// github.com/denisenkom/go-mssqldb
