@@ -26,8 +26,8 @@ func main() {
 		_, err := xdaemon.Background(*logFile, true)
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
-		return
 	}
 
 	logrus.Info("EiBlog start, app name " + config.Conf.EiBlogApp.Name)
@@ -35,7 +35,9 @@ func main() {
 	endRun := make(chan error, 1)
 
 	runHTTPServer(endRun)
+	fmt.Println("final2")
 	fmt.Println(<-endRun)
+	fmt.Println("final3")
 }
 
 func runHTTPServer(endRun chan error) {
