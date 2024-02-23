@@ -32,11 +32,15 @@ eiblogapp:
     tid: G-xxxxxxxxxx
     v: "2"
     adsense: <script async src="https://pagead2.googlesyndication.com/xxx" crossorigin="anonymous"></script>
-  qiniu: # 七牛OSS
-    bucket: eiblog
+  static:
+    type: qiniu
     domain: st.deepzz.com
-    accesskey: MB6AXl_Sj_mmFsL-Lt59Dml2Vmy2o8XMmiCbbSeC
-    secretkey: BIrMy0fsZ0_SHNceNXk3eDuo7WmVYzj2-zrmd5Tf
+    local:
+      path: ./upload
+    qiniu: # 七牛OSS
+      bucket: eiblog
+      accesskey: MB6AXl_Sj_mmFsL-Lt59Dml2Vmy2o8XMmiCbbSeC
+      secretkey: BIrMy0fsZ0_SHNceNXk3eDuo7WmVYzj2-zrmd5Tf
   twitter: # twitter card
     card: summary
     site: deepzz02
