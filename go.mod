@@ -13,6 +13,7 @@ require (
 	github.com/swaggo/files v0.0.0-20190704085106-630677cd5c14
 	github.com/swaggo/gin-swagger v1.3.3
 	github.com/swaggo/swag v1.7.4
+	github.com/zh-five/xdaemon v0.1.1
 	go.mongodb.org/mongo-driver v1.5.4
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/clickhouse v0.4.2
