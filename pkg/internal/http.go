@@ -18,7 +18,6 @@ var httpClient = &http.Client{
 		DialContext: (&net.Dialer{
 			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,
-			DualStack: true,
 		}).DialContext,
 		ForceAttemptHTTP2:     true,
 		MaxIdleConns:          100,
@@ -26,7 +25,7 @@ var httpClient = &http.Client{
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: false,
 		},
 	},
 }
@@ -38,30 +37,6 @@ func newRequest(method, rawurl string, data interface{}) (*http.Request, error) 
 	}
 	originHost := u.Host
 	// 获取主机IP
-	host, port, err := net.SplitHostPort(u.Host)
-	if err != nil {
-		addrErr := err.(*net.AddrError)
-		if addrErr.Err != "missing port in address" {
-			return nil, err
-		}
-		// set default value
-		host = originHost
-		switch u.Scheme {
-		case "http":
-			port = "80"
-		case "https":
-			port = "443"
-		}
-	}
-	ips, err := net.LookupHost(host)
-	if err != nil {
-		return nil, err
-	}
-	if len(ips) == 0 {
-		return nil, fmt.Errorf("http: not found ip(%s)", u.Host)
-	}
-	host = net.JoinHostPort(ips[0], port)
-	u.Host = host
 	// 创建HTTP Request
 	var req *http.Request
 	switch raw := data.(type) {
