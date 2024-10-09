@@ -513,7 +513,8 @@ func handleAPIFileUpload(c *gin.Context) (int, any) {
 		return http.StatusBadRequest, "false"
 
 	}
-	filename := strings.ToLower(header.Filename)
+	//上传的文件名添加时间前缀
+	filename := fmt.Sprintf("%s_%s", time.Now().Format("20060102150405"), strings.ToLower(header.Filename))
 
 	params := internal.FileUploadParams{
 		Name: filename,
