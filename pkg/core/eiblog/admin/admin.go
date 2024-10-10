@@ -98,6 +98,7 @@ func handleAPIBlogger(c *gin.Context) {
 		"blog_name":    bn,
 		"b_title":      bt,
 		"sub_title":    st,
+		"bei_an":       ba,
 		"series_say":   ss,
 		"archives_say": as,
 	})
