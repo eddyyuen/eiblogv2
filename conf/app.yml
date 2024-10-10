@@ -47,7 +47,7 @@ eiblogapp:
     image: st.deepzz.com/static/img/avatar.jpg
     address: twitter.com/deepzz02
   feedrpc: # rss ping
-    feedrurl: https://deepzz.superfeedr.com/
+    feedrurl: https://letgoccc.superfeedr.com/
     pingrpc:
     - http://ping.baidu.com/ping/RPC2
     - http://rpc.pingomatic.com/
