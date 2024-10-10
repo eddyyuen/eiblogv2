@@ -66,7 +66,7 @@ func init() {
 	}
 	go Ei.regeneratePages()
 	go Ei.timerClean()
-	go Ei.timerDisqus()
+	//go Ei.timerDisqus()
 }
 
 // Cache 整站缓存
