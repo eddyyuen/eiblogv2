@@ -6,8 +6,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -48,7 +49,7 @@ func init() {
 	}
 	// init store
 	logrus.Info("store drivers: ", store.Drivers())
-	store, err := store.NewStore(config.Conf.Database.Driver,
+	stores, err := store.NewStore(config.Conf.Database.Driver,
 		config.Conf.Database.Source)
 	if err != nil {
 		panic(err)
@@ -56,7 +57,7 @@ func init() {
 	// Ei init
 	Ei = &Cache{
 		lock:        sync.Mutex{},
-		Store:       store,
+		Store:       stores,
 		TagArticles: make(map[string]model.SortedArticles),
 		ArticlesMap: make(map[string]*model.Article),
 	}
@@ -67,6 +68,7 @@ func init() {
 	go Ei.regeneratePages()
 	go Ei.timerClean()
 	//go Ei.timerDisqus()
+	go Ei.timerRemark42()
 }
 
 // Cache 整站缓存
@@ -242,11 +244,11 @@ func (c *Cache) PageArticleBE(se int, kw string, draft, del bool, p,
 	if err != nil {
 		return nil, 0
 	}
-	max := count / n
+	maxCount := count / n
 	if count%n > 0 {
-		max++
+		maxCount++
 	}
-	return articles, max
+	return articles, maxCount
 }
 
 // FindArticleByID 通过ID查找文章
@@ -404,13 +406,14 @@ func (c *Cache) redelArticle(article *model.Article) {
 
 // loadOrInit 读取数据或初始化
 func (c *Cache) loadOrInit() error {
-	blogapp := config.Conf.EiBlogApp
+	blogApp := config.Conf.EiBlogApp
+	_cases := cases.Title(language.English)
 	// blogger
 	blogger := &model.Blogger{
-		BlogName:  strings.Title(blogapp.Account.Username),
+		BlogName:  _cases.String(blogApp.Account.Username),
 		SubTitle:  "Rome was not built in one day.",
 		BeiAn:     "蜀ICP备xxxxxxxx号-1",
-		BTitle:    fmt.Sprintf("%s's Blog", strings.Title(blogapp.Account.Username)),
+		BTitle:    fmt.Sprintf("%s's Blog", _cases.String(blogApp.Account.Username)),
 		Copyright: `本站使用「<a href="//creativecommons.org/licenses/by/4.0/">署名 4.0 国际</a>」创作共享协议，转载请注明作者及原网址。`,
 	}
 	created, err := c.LoadInsertBlogger(context.Background(), blogger)
@@ -421,7 +424,7 @@ func (c *Cache) loadOrInit() error {
 	if created { // init articles: about blogroll
 		about := &model.Article{
 			ID:        1, // 固定ID
-			Author:    blogapp.Account.Username,
+			Author:    blogApp.Account.Username,
 			Title:     "关于",
 			Slug:      "about",
 			CreatedAt: time.Time{}.AddDate(0, 0, 1),
@@ -431,10 +434,10 @@ func (c *Cache) loadOrInit() error {
 			return err
 		}
 		// 推送到 disqus
-		go internal.ThreadCreate(about, blogger.BTitle)
+		//go internal.ThreadCreate(about, blogger.BTitle)
 		blogroll := &model.Article{
 			ID:        2, // 固定ID
-			Author:    blogapp.Account.Username,
+			Author:    blogApp.Account.Username,
 			Title:     "友情链接",
 			Slug:      "blogroll",
 			CreatedAt: time.Time{}.AddDate(0, 0, 7),
@@ -445,11 +448,11 @@ func (c *Cache) loadOrInit() error {
 		}
 	}
 	// account
-	pwd := tools.EncryptPasswd(blogapp.Account.Username,
-		blogapp.Account.Password)
+	pwd := tools.EncryptPasswd(blogApp.Account.Username,
+		blogApp.Account.Password)
 
 	account := &model.Account{
-		Username: blogapp.Account.Username,
+		Username: blogApp.Account.Username,
 		Password: pwd,
 	}
 	_, err = c.LoadInsertAccount(context.Background(), account)
@@ -513,7 +516,7 @@ func (c *Cache) regeneratePages() {
 				buf.WriteString(series.Desc)
 				buf.WriteString("\n\n")
 				for _, article := range series.Articles {
-					//eg. * [标题一](/post/hello-world.html) <span class="date">(Man 02, 2006)</span>
+					//e.g. * [标题一](/post/hello-world.html) <span class="date">(Man 02, 2006)</span>
 					str := fmt.Sprintf("* [%s](/post/%s.html) <span class=\"date\">(%s)</span>\n",
 						article.Title, article.Slug, article.CreatedAt.Format("Jan 02, 2006"))
 					buf.WriteString(str)
@@ -579,6 +582,21 @@ func (c *Cache) timerDisqus() {
 		err := internal.PostsCount(c.ArticlesMap)
 		if err != nil {
 			logrus.Error("cache.timerDisqus.PostsCount: ", err)
+		}
+	}
+}
+
+func (c *Cache) timerRemark42() {
+	ticker := time.NewTicker(1 * time.Hour)
+	time.Sleep(2000)
+	err := internal.PostRemark42Count(c.ArticlesMap)
+	if err != nil {
+		logrus.Error("cache.timerRemark42.PostRemark42Count: ", err)
+	}
+	for range ticker.C {
+		err := internal.PostRemark42Count(c.ArticlesMap)
+		if err != nil {
+			logrus.Error("cache.timerRemark42.PostRemark42Count: ", err)
 		}
 	}
 }

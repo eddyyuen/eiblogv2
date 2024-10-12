@@ -54,6 +54,10 @@ type Disqus struct {
 	PublicKey   string `yaml:"publickey"`
 	AccessToken string `yaml:"accesstoken"`
 }
+type Remark42 struct {
+	Domain string `yaml:"domain"`
+	SiteID string `yaml:"siteid"`
+}
 
 // Twitter card
 type Twitter struct {
@@ -124,6 +128,7 @@ type EiBlogApp struct {
 	HotWords      []string   `yaml:"hotwords"`
 	General       General    `yaml:"general"`
 	Disqus        Disqus     `yaml:"disqus"`
+	Remark42      Remark42   `yaml:"remark42"`
 	Google        Google     `yaml:"google"`
 	StaticFile    StaticFile `yaml:"static"`
 	Twitter       Twitter    `yaml:"twitter"`

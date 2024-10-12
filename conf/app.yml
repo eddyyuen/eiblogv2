@@ -27,11 +27,14 @@ eiblogapp:
     shortname: xxxxxx
     publickey: wdSgxRm9rdGAlLKFcFdToBe3GT4SibmV7Y8EjJQ0r4GWXeKtxpopMAeIeoI2dTEg
     accesstoken: 50023908f39f4607957e909b495326af
+  remark42: #评论
+    domain: https://re.letgo.cc
+    siteid: letgocc
   google: # 谷歌分析
     url: https://www.google-analytics.com/g/collect
-    tid: G-xxxxxxxxxx
+    tid: G-8NT4PCXJ21
     v: "2"
-    adsense: <script async src="https://pagead2.googlesyndication.com/xxx" crossorigin="anonymous"></script>
+    adsense: #<script async src="https://pagead2.googlesyndication.com/xxx" crossorigin="anonymous"></script>
   static:
     type: qiniu
     domain: st.deepzz.com
